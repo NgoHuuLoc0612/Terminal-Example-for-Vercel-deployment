@@ -3,268 +3,1429 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>nick@universe — terminal</title>
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<title>nick@universe — terminal v2</title>
 
-  :root {
-    --bg0: #0d0f14;
-    --bg1: #161b24;
-    --bg2: #1a2030;
-    --border: #1e2530;
-    --border2: #2a3545;
-    --cyan: #4ec9b0;
-    --blue: #569cd6;
-    --purple: #c586c0;
-    --yellow: #e5c07b;
-    --green: #6bce9e;
-    --red: #e06c75;
-    --accent: #00d4ff;
-    --text: #c8d3e0;
-    --dim: #4a5568;
-    --white: #ffffff;
-    --dcdcaa: #dcdcaa;
-  }
-
-  html, body {
-    height: 100%;
-    background: var(--bg0);
-    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace;
-    color: var(--text);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  #wrap {
-    width: 100%;
-    max-width: 820px;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* ── Title bar ── */
-  .titlebar {
-    background: var(--bg1);
-    padding: 10px 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-    user-select: none;
-  }
-  .dot { width: 13px; height: 13px; border-radius: 50%; }
-  .dot.r { background: #ff5f57; }
-  .dot.y { background: #febc2e; }
-  .dot.g { background: #28c840; }
-  .tb-title { flex: 1; text-align: center; font-size: 12px; color: var(--dim); letter-spacing: 1px; }
-
-  /* ── Output ── */
-  #out {
-    flex: 1;
-    overflow-y: auto;
-    padding: 16px 20px 8px;
-    font-size: 13.5px;
-    line-height: 1.75;
-    scroll-behavior: smooth;
-  }
-  #out::-webkit-scrollbar { width: 5px; }
-  #out::-webkit-scrollbar-track { background: transparent; }
-  #out::-webkit-scrollbar-thumb { background: var(--bg2); border-radius: 4px; }
-
-  .line { white-space: pre-wrap; word-break: break-all; min-height: 1em; }
-
-  /* colour helpers */
-  .p  { color: var(--cyan); }
-  .pu { color: var(--blue); }
-  .pa { color: var(--purple); }
-  .pd { color: var(--dcdcaa); }
-  .cc { color: var(--cyan); }
-  .cg { color: var(--green); }
-  .cy { color: var(--yellow); }
-  .cr { color: var(--red); }
-  .ca { color: var(--accent); }
-  .cb { color: var(--blue); }
-  .cw { color: var(--white); font-weight: bold; }
-  .cd { color: var(--dim); }
-
-  /* ── Hint bar ── */
-  #hints {
-    padding: 7px 20px;
-    display: flex;
-    gap: 7px;
-    flex-wrap: wrap;
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    background: #0a0c10;
-    flex-shrink: 0;
-  }
-  .hbtn {
-    font-family: inherit;
-    font-size: 11.5px;
-    padding: 2px 9px;
-    background: var(--bg2);
-    border: 1px solid var(--border2);
-    border-radius: 4px;
-    color: var(--blue);
-    cursor: pointer;
-    transition: background .13s, color .13s;
-  }
-  .hbtn:hover { background: #223040; color: var(--accent); }
-
-  /* ── Input row ── */
-  .input-row {
-    display: flex;
-    align-items: center;
-    padding: 8px 20px 14px;
-    gap: 7px;
-    flex-shrink: 0;
-  }
-  .ps { font-size: 13.5px; white-space: nowrap; }
-  #cmd {
-    flex: 1;
-    background: transparent;
-    border: none;
-    outline: none;
-    font-family: inherit;
-    font-size: 13.5px;
-    color: var(--text);
-    caret-color: var(--accent);
-  }
-  #cmd::placeholder { color: var(--dim); }
-
-  /* ── Matrix canvas overlay ── */
-  #matrix-canvas {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 10;
-    cursor: pointer;
-  }
-  #matrix-canvas.active { display: block; }
-  #matrix-exit {
-    display: none;
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 11;
-    font-family: inherit;
-    font-size: 12px;
-    padding: 5px 18px;
-    background: rgba(0,0,0,.7);
-    border: 1px solid var(--accent);
-    color: var(--accent);
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  #matrix-exit.active { display: block; }
-</style>
+<!-- Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+
+<!-- GSAP + plugins -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/TextPlugin.min.js"></script>
+
+<!-- Particles.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
+
+<!-- Typed.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.1.0/typed.umd.js"></script>
+
+<!-- Chroma.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.2/chroma.min.js"></script>
+
+<!-- Anime.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
+
+<!-- THREE.js for 3D effects -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<!-- Howler.js for audio (beeps) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js"></script>
+
+<!-- Confetti -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg0: #050709;
+  --bg1: #0c0e14;
+  --bg2: #111520;
+  --bg3: #161b28;
+  --border: #1a2235;
+  --border2: #243050;
+  --border-glow: rgba(0,212,255,0.15);
+  --cyan: #4ec9b0;
+  --blue: #569cd6;
+  --purple: #c586c0;
+  --yellow: #e5c07b;
+  --green: #6bce9e;
+  --red: #e06c75;
+  --orange: #f4a261;
+  --accent: #00d4ff;
+  --accent2: #0099cc;
+  --accent3: #00ff88;
+  --magenta: #ff00aa;
+  --text: #c8d3e0;
+  --dim: #3a4a5e;
+  --dim2: #2a3545;
+  --white: #ffffff;
+  --dcdcaa: #dcdcaa;
+  --glow: 0 0 8px rgba(0,212,255,0.4), 0 0 20px rgba(0,212,255,0.15);
+  --glow-green: 0 0 8px rgba(107,206,158,0.4);
+  --glow-red: 0 0 8px rgba(224,108,117,0.4);
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg0);
+  font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+  color: var(--text);
+  overflow: hidden;
+}
+
+/* ── Particle Background ── */
+#particles-js {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ── Scanlines ── */
+#scanlines {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.08) 2px,
+    rgba(0,0,0,0.08) 4px
+  );
+  animation: scanMove 8s linear infinite;
+}
+@keyframes scanMove {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 100vh; }
+}
+
+/* ── Vignette ── */
+#vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.7) 100%);
+}
+
+/* ── CRT glitch overlay ── */
+#crt {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+}
+#crt.glitch {
+  animation: crtGlitch 0.3s steps(1) forwards;
+}
+@keyframes crtGlitch {
+  0%   { opacity: 0; }
+  10%  { opacity: 0.05; background: rgba(255,0,0,0.05); transform: translate(2px,0) skewX(2deg); }
+  20%  { opacity: 0; transform: none; }
+  30%  { opacity: 0.04; background: rgba(0,255,255,0.05); transform: translate(-1px,0); }
+  100% { opacity: 0; transform: none; }
+}
+
+/* ── Main layout ── */
+#wrap {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 900px;
+  height: 100vh;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  backdrop-filter: blur(0px);
+}
+
+/* ── Title bar ── */
+.titlebar {
+  background: linear-gradient(90deg, #090b12, #0d1018, #090b12);
+  padding: 11px 18px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  user-select: none;
+  position: relative;
+}
+.titlebar::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.4;
+}
+.dot { width: 13px; height: 13px; border-radius: 50%; cursor: pointer; transition: filter 0.2s; }
+.dot:hover { filter: brightness(1.3); }
+.dot.r { background: #ff5f57; box-shadow: 0 0 6px rgba(255,95,87,0.5); }
+.dot.y { background: #febc2e; box-shadow: 0 0 6px rgba(254,188,46,0.5); }
+.dot.g { background: #28c840; box-shadow: 0 0 6px rgba(40,200,64,0.5); }
+.tb-title {
+  flex: 1;
+  text-align: center;
+  font-size: 11px;
+  color: var(--dim);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-family: 'Orbitron', monospace;
+}
+.tb-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--dim);
+}
+.tb-status .pulse {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent3);
+  box-shadow: 0 0 6px var(--accent3);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+/* ── Tab bar ── */
+.tabbar {
+  display: flex;
+  align-items: center;
+  background: #080a10;
+  border-bottom: 1px solid var(--border);
+  padding: 0 16px;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.tab {
+  padding: 5px 14px;
+  font-size: 11px;
+  color: var(--dim);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+}
+.tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.tab:hover:not(.active) { color: var(--text); }
+.tab-spacer { flex: 1; }
+.tab-time { font-size: 10px; color: var(--dim); font-variant-numeric: tabular-nums; }
+
+/* ── Output ── */
+#out {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 22px 8px;
+  font-size: 13px;
+  line-height: 1.8;
+  scroll-behavior: smooth;
+  position: relative;
+}
+#out::-webkit-scrollbar { width: 4px; }
+#out::-webkit-scrollbar-track { background: transparent; }
+#out::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 4px; }
+#out::-webkit-scrollbar-thumb:hover { background: var(--border2); }
+
+.line { white-space: pre-wrap; word-break: break-word; min-height: 1em; }
+.line.new { animation: fadeSlide 0.2s ease forwards; }
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* colour helpers */
+.p   { color: var(--cyan); }
+.pu  { color: var(--blue); }
+.pa  { color: var(--purple); }
+.pd  { color: var(--dcdcaa); }
+.cc  { color: var(--cyan); }
+.cg  { color: var(--green); }
+.cy  { color: var(--yellow); }
+.cr  { color: var(--red); }
+.ca  { color: var(--accent); }
+.cb  { color: var(--blue); }
+.cw  { color: var(--white); font-weight: 500; }
+.cd  { color: var(--dim); }
+.co  { color: var(--orange); }
+.cm  { color: var(--magenta); }
+.cg2 { color: var(--accent3); }
+
+/* Glowing text */
+.glow-text { text-shadow: var(--glow); }
+.glow-green { text-shadow: var(--glow-green); }
+
+/* Progress bar animation */
+.progress-fill {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* ── Hint / Quick commands bar ── */
+#hints {
+  padding: 6px 18px;
+  display: flex;
+  gap: 5px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, #080a10, #060810);
+  flex-shrink: 0;
+  scrollbar-width: none;
+}
+#hints::-webkit-scrollbar { display: none; }
+.hbtn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  padding: 3px 10px;
+  background: rgba(26, 32, 48, 0.8);
+  border: 1px solid var(--border2);
+  border-radius: 3px;
+  color: var(--blue);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+.hbtn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(0,212,255,0.08), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.3s;
+}
+.hbtn:hover::before { transform: translateX(100%); }
+.hbtn:hover {
+  background: rgba(0,212,255,0.1);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 10px rgba(0,212,255,0.15);
+}
+.hbtn:active { transform: scale(0.96); }
+
+/* ── Status bar ── */
+#statusbar {
+  padding: 4px 18px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 10px;
+  color: var(--dim);
+  background: #060810;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.sb-item { display: flex; align-items: center; gap: 4px; }
+.sb-item .dot-sm { width: 5px; height: 5px; border-radius: 50%; }
+.sb-branch { color: var(--purple); }
+.sb-spacer { flex: 1; }
+.sb-right { display: flex; align-items: center; gap: 16px; }
+
+/* ── Input row ── */
+.input-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 22px 14px;
+  gap: 8px;
+  flex-shrink: 0;
+  position: relative;
+}
+.input-row::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 22px; right: 22px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border2), transparent);
+}
+.ps { font-size: 13px; white-space: nowrap; flex-shrink: 0; }
+.input-wrap {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+#cmd {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--text);
+  caret-color: var(--accent);
+  width: 100%;
+}
+#cmd::placeholder { color: var(--dim2); }
+
+/* Autocomplete hint */
+#autocomplete-hint {
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--dim);
+  pointer-events: none;
+  white-space: pre;
+}
+
+/* ── Matrix canvas ── */
+#matrix-canvas {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  cursor: pointer;
+}
+#matrix-canvas.active { display: block; }
+#matrix-exit {
+  display: none;
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 101;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  padding: 6px 20px;
+  background: rgba(0,0,0,0.8);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: 3px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  box-shadow: var(--glow);
+  animation: matrixBtn 2s ease infinite;
+}
+@keyframes matrixBtn {
+  0%,100% { box-shadow: 0 0 10px rgba(0,212,255,0.3); }
+  50% { box-shadow: 0 0 20px rgba(0,212,255,0.6); }
+}
+#matrix-exit.active { display: block; }
+
+/* ── Boot sequence ── */
+#boot-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: var(--bg0);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  transition: opacity 0.5s;
+}
+#boot-overlay.hidden { opacity: 0; pointer-events: none; }
+.boot-logo {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(20px, 4vw, 36px);
+  font-weight: 900;
+  color: var(--accent);
+  text-shadow: var(--glow);
+  letter-spacing: 4px;
+  text-align: center;
+}
+.boot-sub {
+  font-size: 11px;
+  color: var(--dim);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+.boot-bar-wrap {
+  width: 280px;
+  height: 2px;
+  background: var(--bg3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.boot-bar-fill {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, var(--accent2), var(--accent), var(--accent3));
+  border-radius: 2px;
+  box-shadow: 0 0 10px var(--accent);
+  transition: width 0.05s;
+}
+.boot-status {
+  font-size: 11px;
+  color: var(--dim);
+  height: 16px;
+}
+
+/* ── Glitch text effect ── */
+.glitch-text {
+  position: relative;
+  display: inline-block;
+}
+.glitch-text::before, .glitch-text::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  overflow: hidden;
+}
+.glitch-text::before {
+  color: var(--magenta);
+  animation: glitch1 3s infinite;
+}
+.glitch-text::after {
+  color: var(--accent);
+  animation: glitch2 3s infinite;
+}
+@keyframes glitch1 {
+  0%,90%,100% { clip-path: none; transform: none; opacity: 0; }
+  91% { clip-path: inset(30% 0 50% 0); transform: translate(-2px, 0); opacity: 0.8; }
+  93% { clip-path: inset(60% 0 10% 0); transform: translate(2px, 0); opacity: 0.8; }
+  95% { clip-path: none; transform: none; opacity: 0; }
+}
+@keyframes glitch2 {
+  0%,85%,100% { clip-path: none; transform: none; opacity: 0; }
+  86% { clip-path: inset(10% 0 70% 0); transform: translate(2px, 0); opacity: 0.6; }
+  88% { clip-path: inset(50% 0 20% 0); transform: translate(-1px, 0); opacity: 0.6; }
+  90% { clip-path: none; transform: none; opacity: 0; }
+}
+
+/* ── Spinner ── */
+.spinner {
+  display: inline-block;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  from { content: '⣾'; }
+  12.5% { content: '⣽'; }
+  25% { content: '⣻'; }
+  37.5% { content: '⢿'; }
+  50% { content: '⡿'; }
+  62.5% { content: '⣟'; }
+  75% { content: '⣯'; }
+  87.5% { content: '⣷'; }
+  to { content: '⣾'; }
+}
+
+/* ── Effect overlays ── */
+#effect-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  display: none;
+}
+#effect-canvas.active { display: block; }
+
+/* ── Screensaver ── */
+#screensaver {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: var(--bg0);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-family: 'Orbitron', monospace;
+}
+#screensaver.active { display: flex; }
+.ss-clock {
+  font-size: clamp(40px, 8vw, 80px);
+  font-weight: 900;
+  color: var(--accent);
+  text-shadow: 0 0 30px var(--accent), 0 0 60px rgba(0,212,255,0.3);
+  letter-spacing: 6px;
+  animation: clockPulse 4s ease-in-out infinite;
+}
+@keyframes clockPulse {
+  0%,100% { text-shadow: 0 0 30px var(--accent), 0 0 60px rgba(0,212,255,0.3); }
+  50% { text-shadow: 0 0 50px var(--accent), 0 0 100px rgba(0,212,255,0.5); }
+}
+.ss-date {
+  font-size: 14px;
+  color: var(--dim);
+  letter-spacing: 4px;
+  margin-top: 12px;
+  text-align: center;
+}
+
+/* ── ASCII art ── */
+.ascii { font-size: 11px; line-height: 1.4; }
+
+/* ── Rainbow text ── */
+.rainbow { animation: rainbowShift 3s linear infinite; }
+@keyframes rainbowShift {
+  0%   { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+/* ── Typing cursor blink ── */
+#cursor-blink {
+  display: inline-block;
+  width: 8px; height: 14px;
+  background: var(--accent);
+  vertical-align: middle;
+  animation: blink 1.2s step-start infinite;
+  box-shadow: var(--glow);
+}
+@keyframes blink {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ── Context menu ── */
+#ctx-menu {
+  position: fixed;
+  z-index: 300;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  padding: 6px 0;
+  min-width: 160px;
+  display: none;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+#ctx-menu.active { display: block; }
+.ctx-item {
+  padding: 6px 16px;
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.1s;
+}
+.ctx-item:hover { background: rgba(0,212,255,0.08); color: var(--accent); }
+.ctx-sep { height: 1px; background: var(--border); margin: 4px 0; }
+
+/* ── Skill bar animation ── */
+@keyframes growBar {
+  from { width: 0; }
+}
+
+/* ── Notification toast ── */
+#toast {
+  position: fixed;
+  top: 60px;
+  right: 20px;
+  z-index: 400;
+  background: var(--bg2);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: 10px 16px;
+  font-size: 12px;
+  color: var(--accent);
+  box-shadow: var(--glow);
+  transform: translateX(120%);
+  transition: transform 0.3s ease;
+  max-width: 250px;
+}
+#toast.show { transform: translateX(0); }
+
+/* ── Game elements ── */
+.game-area {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  padding: 12px;
+  margin: 4px 0;
+  font-family: monospace;
+}
+</style>
 </head>
 <body>
 
+<!-- Boot overlay -->
+<div id="boot-overlay">
+  <div class="boot-logo">NICK@UNIVERSE</div>
+  <div class="boot-sub">Terminal v2.0 — Initializing System</div>
+  <div class="boot-bar-wrap"><div class="boot-bar-fill" id="boot-fill"></div></div>
+  <div class="boot-status" id="boot-status">Loading kernel...</div>
+</div>
+
+<!-- Particles -->
+<div id="particles-js"></div>
+<div id="scanlines"></div>
+<div id="vignette"></div>
+<div id="crt"></div>
+
+<!-- Screensaver -->
+<div id="screensaver">
+  <div style="text-align:center">
+    <div class="ss-clock" id="ss-clock">00:00:00</div>
+    <div class="ss-date" id="ss-date"></div>
+    <div style="margin-top:20px;font-size:11px;color:var(--dim);letter-spacing:2px;">CLICK TO WAKE</div>
+  </div>
+</div>
+
+<!-- Context menu -->
+<div id="ctx-menu">
+  <div class="ctx-item" onclick="ctxAction('copy')">📋 Copy output</div>
+  <div class="ctx-item" onclick="ctxAction('clear')">🗑️ Clear terminal</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="ctxAction('theme')">🎨 Toggle theme</div>
+  <div class="ctx-item" onclick="ctxAction('matrix')">💊 Enter matrix</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="ctxAction('zoom+')">🔍 Zoom in</div>
+  <div class="ctx-item" onclick="ctxAction('zoom-')">🔍 Zoom out</div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Matrix -->
 <canvas id="matrix-canvas"></canvas>
-<button id="matrix-exit">[ press any key or click to exit ]</button>
+<button id="matrix-exit">[ PRESS ANY KEY OR CLICK TO EXIT ]</button>
+
+<!-- Effect canvas -->
+<canvas id="effect-canvas"></canvas>
 
 <div id="wrap">
   <div class="titlebar">
-    <div class="dot r"></div>
-    <div class="dot y"></div>
-    <div class="dot g"></div>
-    <div class="tb-title">nick@universe — zsh</div>
+    <div class="dot r" title="Close" onclick="showToast('Nice try 😏')"></div>
+    <div class="dot y" title="Minimize" onclick="toggleScreensaver()"></div>
+    <div class="dot g" title="Maximize" onclick="showToast('Already fullscreen!')"></div>
+    <div class="tb-title" id="tb-title">nick@universe — zsh — 80×24</div>
+    <div class="tb-status">
+      <div class="pulse"></div>
+      <span id="tb-time">--:--</span>
+    </div>
+  </div>
+
+  <div class="tabbar">
+    <div class="tab active">zsh</div>
+    <div class="tab" onclick="showToast('npm run dev — port 5173')">npm</div>
+    <div class="tab" onclick="showToast('git log --oneline')">git</div>
+    <div class="tab-spacer"></div>
+    <div class="tab-time" id="tab-time"></div>
   </div>
 
   <div id="out"></div>
 
   <div id="hints"></div>
 
+  <div id="statusbar">
+    <div class="sb-item">
+      <div class="dot-sm" style="background:var(--accent3);box-shadow:0 0 4px var(--accent3)"></div>
+      <span class="sb-branch">⎇ main</span>
+    </div>
+    <div class="sb-item"><span class="cd">✓ 0 errors</span></div>
+    <div class="sb-item"><span style="color:var(--yellow)">⚡ UTF-8</span></div>
+    <div class="sb-spacer"></div>
+    <div class="sb-right">
+      <span class="cd" id="sb-uptime">uptime: 0s</span>
+      <span class="cd" id="sb-cmds">cmds: 0</span>
+      <span style="color:var(--accent)">▲ NickOS 25.06</span>
+    </div>
+  </div>
+
   <div class="input-row">
     <div class="ps">
-      <span class="pu">nick</span><span class="pa">@</span><span class="cc">universe</span>&nbsp;<span class="pd">❯</span>
+      <span class="pu">nick</span><span class="pa">@</span><span class="cc">universe</span>&nbsp;<span class="pd" style="text-shadow:var(--glow)">❯</span>
     </div>
-    <input id="cmd" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="type a command…" />
+    <div class="input-wrap">
+      <div id="autocomplete-hint"></div>
+      <input id="cmd" autocomplete="off" autocorrect="off" autocapitalize="off"
+             spellcheck="false" placeholder="type a command…" />
+    </div>
+    <span id="cursor-blink"></span>
   </div>
 </div>
 
 <script>
-const out  = document.getElementById('out');
-const inp  = document.getElementById('cmd');
-const hints= document.getElementById('hints');
+/* ═══════════════════════════════════════════════════
+   GSAP setup
+═══════════════════════════════════════════════════ */
+gsap.registerPlugin(TextPlugin);
+
+/* ═══════════════════════════════════════════════════
+   Particles
+═══════════════════════════════════════════════════ */
+particlesJS('particles-js', {
+  particles: {
+    number: { value: 60, density: { enable: true, value_area: 800 } },
+    color: { value: ['#00d4ff', '#4ec9b0', '#569cd6', '#00ff88'] },
+    shape: { type: 'circle' },
+    opacity: { value: 0.25, random: true, anim: { enable: true, speed: 0.5, opacity_min: 0.05 } },
+    size: { value: 1.5, random: true },
+    line_linked: { enable: true, distance: 120, color: '#1a2235', opacity: 0.3, width: 1 },
+    move: { enable: true, speed: 0.6, direction: 'none', random: true, out_mode: 'out' }
+  },
+  interactivity: {
+    detect_on: 'canvas',
+    events: { onhover: { enable: true, mode: 'grab' }, resize: true },
+    modes: { grab: { distance: 100, line_linked: { opacity: 0.5 } } }
+  },
+  retina_detect: true
+});
+
+/* ═══════════════════════════════════════════════════
+   Core refs
+═══════════════════════════════════════════════════ */
+const out    = document.getElementById('out');
+const inp    = document.getElementById('cmd');
+const hints  = document.getElementById('hints');
+const acHint = document.getElementById('autocomplete-hint');
+const crt    = document.getElementById('crt');
 const PROMPT = `<span class="pu">nick</span><span class="pa">@</span><span class="cc">universe</span> <span class="pd">❯</span>`;
 
-let hist = [], hi = -1;
+let hist = [], hi = -1, cmdCount = 0, fontSize = 13;
+const startTime = Date.now();
 
-/* ── helpers ── */
-const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-function appendLine(html) {
+/* ═══════════════════════════════════════════════════
+   Utilities
+═══════════════════════════════════════════════════ */
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+function appendLine(html, animate = true) {
   const d = document.createElement('div');
-  d.className = 'line'; d.innerHTML = html; out.appendChild(d);
+  d.className = 'line' + (animate ? ' new' : '');
+  d.innerHTML = html;
+  out.appendChild(d);
 }
-const scroll = () => out.scrollTop = out.scrollHeight;
 
-/* ── command definitions ── */
+function appendLines(arr) {
+  arr.forEach(l => appendLine(l));
+  scroll();
+}
+
+const scroll = () => requestAnimationFrame(() => out.scrollTop = out.scrollHeight);
+
+function glitch() {
+  crt.classList.remove('glitch');
+  void crt.offsetWidth;
+  crt.classList.add('glitch');
+  setTimeout(() => crt.classList.remove('glitch'), 400);
+}
+
+function showToast(msg, duration = 3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+function beep(freq = 440, duration = 50) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = freq;
+    osc.type = 'square';
+    gain.gain.setValueAtTime(0.03, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration/1000);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + duration/1000);
+  } catch(e) {}
+}
+
+/* ═══════════════════════════════════════════════════
+   Clock & uptime
+═══════════════════════════════════════════════════ */
+function updateClock() {
+  const now = new Date();
+  const t = now.toLocaleTimeString('en-US', { hour12: false });
+  document.getElementById('tb-time').textContent = t;
+  document.getElementById('tab-time').textContent = t;
+  const ss = document.getElementById('screensaver');
+  if (ss.classList.contains('active')) {
+    document.getElementById('ss-clock').textContent = t;
+    document.getElementById('ss-date').textContent = now.toLocaleDateString('en-US',
+      { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  }
+  const up = Math.floor((Date.now() - startTime) / 1000);
+  const m = Math.floor(up/60), s = up%60;
+  document.getElementById('sb-uptime').textContent = `uptime: ${m}m${s}s`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+/* ═══════════════════════════════════════════════════
+   Idle screensaver
+═══════════════════════════════════════════════════ */
+let idleTimer;
+function resetIdle() {
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(activateScreensaver, 120000); // 2min
+}
+function activateScreensaver() {
+  document.getElementById('screensaver').classList.add('active');
+}
+function toggleScreensaver() {
+  document.getElementById('screensaver').classList.toggle('active');
+}
+document.getElementById('screensaver').addEventListener('click', () => {
+  document.getElementById('screensaver').classList.remove('active');
+  inp.focus();
+  resetIdle();
+});
+document.addEventListener('mousemove', resetIdle);
+document.addEventListener('keydown', resetIdle);
+resetIdle();
+
+/* ═══════════════════════════════════════════════════
+   Context menu
+═══════════════════════════════════════════════════ */
+const ctxMenu = document.getElementById('ctx-menu');
+document.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  ctxMenu.style.top = Math.min(e.clientY, window.innerHeight-200) + 'px';
+  ctxMenu.style.left = Math.min(e.clientX, window.innerWidth-180) + 'px';
+  ctxMenu.classList.add('active');
+});
+document.addEventListener('click', () => ctxMenu.classList.remove('active'));
+let altTheme = false;
+function ctxAction(action) {
+  ctxMenu.classList.remove('active');
+  if (action === 'copy') {
+    navigator.clipboard.writeText(out.innerText).catch(()=>{});
+    showToast('Output copied!');
+  } else if (action === 'clear') {
+    out.innerHTML = ''; showToast('Terminal cleared');
+  } else if (action === 'theme') {
+    altTheme = !altTheme;
+    document.documentElement.style.setProperty('--accent', altTheme ? '#00ff88' : '#00d4ff');
+    document.documentElement.style.setProperty('--cyan', altTheme ? '#00ff88' : '#4ec9b0');
+    showToast(altTheme ? 'Theme: Matrix Green' : 'Theme: Cyber Blue');
+  } else if (action === 'matrix') {
+    run('matrix');
+  } else if (action === 'zoom+') {
+    fontSize = Math.min(fontSize+1, 18);
+    out.style.fontSize = inp.style.fontSize = fontSize + 'px';
+  } else if (action === 'zoom-') {
+    fontSize = Math.max(fontSize-1, 10);
+    out.style.fontSize = inp.style.fontSize = fontSize + 'px';
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   Autocomplete
+═══════════════════════════════════════════════════ */
+const ALL_CMDS = ['help','whoami','skills','projects','contact','motd','ls','cat',
+  'neofetch','matrix','clear','history','date','uname','echo','rain','fireworks',
+  'snake','banner','hack','glitch','color','weather','music','stats','fortune',
+  'ping','curl','sudo','cowsay','lolcat','screensaver','theme','credits'];
+
+inp.addEventListener('input', () => {
+  const val = inp.value;
+  if (!val) { acHint.textContent = ''; return; }
+  const match = ALL_CMDS.find(c => c.startsWith(val) && c !== val);
+  acHint.textContent = match ? val + match.slice(val.length) : '';
+});
+
+/* ═══════════════════════════════════════════════════
+   MATRIX
+═══════════════════════════════════════════════════ */
+const canvas  = document.getElementById('matrix-canvas');
+const matExit = document.getElementById('matrix-exit');
+const ctx2    = canvas.getContext('2d');
+let matRaf = null, drops = [];
+const MATRIX_CHARS = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZｦｧｨｩｪ@#$%&';
+
+function startMatrix() {
+  canvas.classList.add('active'); matExit.classList.add('active');
+  canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+  const cols = Math.floor(canvas.width / 16);
+  drops = Array.from({length: cols}, () => Math.random() * -50);
+  function draw() {
+    ctx2.fillStyle = 'rgba(0,0,0,0.04)';
+    ctx2.fillRect(0,0,canvas.width,canvas.height);
+    drops.forEach((y,i) => {
+      const ch = MATRIX_CHARS[Math.floor(Math.random()*MATRIX_CHARS.length)];
+      const bright = Math.random() > 0.92;
+      ctx2.fillStyle = bright ? '#ffffff' : (Math.random()>.7 ? '#00ff88' : '#00d4ff');
+      ctx2.font = (bright ? 'bold ' : '') + '14px monospace';
+      ctx2.fillText(ch, i*16, y*16);
+      if (y*16 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i] += 0.5 + Math.random()*0.5;
+    });
+    matRaf = requestAnimationFrame(draw);
+  }
+  draw();
+}
+function stopMatrix() {
+  cancelAnimationFrame(matRaf);
+  canvas.classList.remove('active'); matExit.classList.remove('active');
+  ctx2.clearRect(0,0,canvas.width,canvas.height);
+  appendLine(`  <span class="cg">Exiting the Matrix... welcome back to reality.</span>`);
+  appendLine(''); scroll();
+}
+canvas.addEventListener('click', stopMatrix);
+matExit.addEventListener('click', stopMatrix);
+document.addEventListener('keydown', e => {
+  if (canvas.classList.contains('active')) stopMatrix();
+});
+
+/* ═══════════════════════════════════════════════════
+   Rain effect
+═══════════════════════════════════════════════════ */
+const efCanvas = document.getElementById('effect-canvas');
+const efCtx = efCanvas.getContext('2d');
+let efRaf = null, efActive = false, rainDrops = [];
+
+function startRain() {
+  efCanvas.classList.add('active'); efActive = true;
+  efCanvas.width = window.innerWidth; efCanvas.height = window.innerHeight;
+  rainDrops = Array.from({length: 80}, () => ({
+    x: Math.random()*efCanvas.width,
+    y: Math.random()*-efCanvas.height,
+    speed: 3 + Math.random()*5,
+    length: 10 + Math.random()*20,
+    opacity: 0.2 + Math.random()*0.5
+  }));
+  const col = altTheme ? '#00ff88' : '#00d4ff';
+  function draw() {
+    efCtx.clearRect(0,0,efCanvas.width,efCanvas.height);
+    rainDrops.forEach(d => {
+      efCtx.strokeStyle = col.replace(')', `,${d.opacity})`).replace('rgb','rgba').replace('#00d4ff', `rgba(0,212,255,${d.opacity})`).replace('#00ff88',`rgba(0,255,136,${d.opacity})`);
+      efCtx.lineWidth = 1;
+      efCtx.beginPath();
+      efCtx.moveTo(d.x, d.y);
+      efCtx.lineTo(d.x - 1, d.y + d.length);
+      efCtx.stroke();
+      d.y += d.speed;
+      if (d.y > efCanvas.height) { d.y = -d.length; d.x = Math.random()*efCanvas.width; }
+    });
+    if (efActive) efRaf = requestAnimationFrame(draw);
+  }
+  draw();
+  setTimeout(stopEffect, 8000);
+}
+function stopEffect() {
+  efActive = false; cancelAnimationFrame(efRaf);
+  efCanvas.classList.remove('active'); efCtx.clearRect(0,0,efCanvas.width,efCanvas.height);
+}
+
+/* ═══════════════════════════════════════════════════
+   Fireworks
+═══════════════════════════════════════════════════ */
+function fireFireworks() {
+  const colors = ['#00d4ff','#00ff88','#ff00aa','#ffff00','#ff6600','#c586c0'];
+  let count = 0;
+  const interval = setInterval(() => {
+    confetti({
+      particleCount: 30,
+      spread: 100,
+      origin: { x: Math.random(), y: 0.3 + Math.random()*0.4 },
+      colors: colors,
+      ticks: 120
+    });
+    if (++count >= 6) clearInterval(interval);
+  }, 300);
+}
+
+/* ═══════════════════════════════════════════════════
+   SNAKE game
+═══════════════════════════════════════════════════ */
+let snakeGame = null;
+function startSnake() {
+  const W=20, H=10;
+  let snake=[{x:10,y:5}], dir={x:1,y:0}, food=randFood(), score=0, alive=true;
+  function randFood() {
+    let f;
+    do { f={x:Math.floor(Math.random()*W), y:Math.floor(Math.random()*H)}; }
+    while(snake.some(s=>s.x===f.x&&s.y===f.y));
+    return f;
+  }
+  function render() {
+    let grid = Array.from({length:H},()=>Array(W).fill('·'));
+    snake.forEach((s,i) => { if(s.x>=0&&s.x<W&&s.y>=0&&s.y<H) grid[s.y][s.x] = i===0?'█':'▪'; });
+    if(food.x>=0&&food.x<W&&food.y>=0&&food.y<H) grid[food.y][food.x]='●';
+    const gameEl = document.getElementById('snake-game');
+    if (!gameEl) { clearInterval(snakeGame); return; }
+    gameEl.innerHTML = `<span class="ca">SCORE: ${score}</span>  <span class="cd">[WASD to move | Q to quit]</span>\n\n` +
+      `  ╔${'═'.repeat(W)}╗\n` +
+      grid.map(row => `  ║<span class="cg">${row.join('')}</span>║`).join('\n') +
+      `\n  ╚${'═'.repeat(W)}╝`;
+  }
+  function step() {
+    if (!alive) return;
+    const head={x:snake[0].x+dir.x, y:snake[0].y+dir.y};
+    if(head.x<0||head.x>=W||head.y<0||head.y>=H||snake.some(s=>s.x===head.x&&s.y===head.y)) {
+      alive=false;
+      clearInterval(snakeGame); snakeGame=null;
+      const el = document.getElementById('snake-game');
+      if(el) el.innerHTML = `<span class="cr">GAME OVER — Final score: ${score}</span>\n<span class="cd">Type 'snake' to play again</span>`;
+      return;
+    }
+    snake.unshift(head);
+    if(head.x===food.x&&head.y===food.y) { score+=10; food=randFood(); beep(880,50); }
+    else snake.pop();
+    render();
+  }
+  appendLine(`<div id="snake-game" class="game-area ascii"></div>`);
+  render(); scroll();
+  snakeGame = setInterval(step, 150);
+
+  const snakeKey = e => {
+    const map = {w:{x:0,y:-1},a:{x:-1,y:0},s:{x:0,y:1},d:{x:1,y:0}};
+    const k = e.key.toLowerCase();
+    if(map[k] && !(map[k].x===-dir.x||map[k].y===-dir.y)) dir=map[k];
+    if(k==='q') { clearInterval(snakeGame); snakeGame=null; alive=false; document.removeEventListener('keydown',snakeKey); appendLine(`<span class="cd">Snake quit.</span>`); scroll(); }
+  };
+  document.addEventListener('keydown', snakeKey);
+}
+
+/* ═══════════════════════════════════════════════════
+   Hack simulation
+═══════════════════════════════════════════════════ */
+async function hackSim() {
+  const msgs = [
+    [`<span class="cg">Initializing breach sequence...</span>`, 300],
+    [`<span class="cy">  [▓▓░░░░░░░░] Scanning ports...</span>`, 400],
+    [`<span class="cy">  [▓▓▓▓▓░░░░░] Found open: 22, 80, 443, 8080</span>`, 500],
+    [`<span class="cy">  [▓▓▓▓▓▓▓▓░░] Exploiting CVE-2024-9999...</span>`, 600],
+    [`<span class="cg">  ✓ Root access granted</span>`, 700],
+    [`<span class="cd">  dumping /etc/shadow...</span>`, 800],
+    [`<span class="cr">  root:$6$abc123:18000:0:99999:7:::</span>`, 900],
+    [`<span class="cd">  Exfiltrating data... 1.2GB compressed</span>`, 1000],
+    [`<span class="ca">  [▓▓▓▓▓▓▓▓▓▓] 100% — Upload complete</span>`, 1200],
+    [``, 1300],
+    [`<span class="cm">  ⚠  TOTALLY FAKE — just a visual effect 😄</span>`, 1400],
+    [`<span class="cd">  No actual hacking occurred. You're clean.</span>`, 1500],
+  ];
+  for (const [msg, delay] of msgs) {
+    await new Promise(r => setTimeout(r, delay - (msgs.indexOf([msg,delay]) > 0 ? msgs[msgs.indexOf([msg,delay])-1][1] : 0)));
+    appendLine(`  ${msg}`); beep(200+Math.random()*200, 30); scroll();
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   Fortune quotes
+═══════════════════════════════════════════════════ */
+const FORTUNES = [
+  [`"The best way to predict the future is to invent it."`, `— Alan Kay`],
+  [`"Programs must be written for people to read, and only incidentally for machines to execute."`, `— Harold Abelson`],
+  [`"Simplicity is the soul of efficiency."`, `— Austin Freeman`],
+  [`"Any fool can write code that a computer can understand. Good programmers write code that humans can understand."`, `— Martin Fowler`],
+  [`"First, solve the problem. Then, write the code."`, `— John Johnson`],
+  [`"Code is like humor. When you have to explain it, it's bad."`, `— Cory House`],
+  [`"The most dangerous phrase in the language is: 'We've always done it this way'."`, `— Grace Hopper`],
+  [`"Talk is cheap. Show me the code."`, `— Linus Torvalds`],
+  [`"I think it is absolutely possible for an ordinary person to choose to become extraordinary."`, `— Elon Musk`],
+  [`"Make it work, make it right, make it fast."`, `— Kent Beck`],
+];
+
+/* ═══════════════════════════════════════════════════
+   Music visualizer (fake)
+═══════════════════════════════════════════════════ */
+let musicInterval = null;
+function startMusic() {
+  if (musicInterval) { clearInterval(musicInterval); musicInterval = null; appendLine(`  <span class="cd">♪ Music stopped.</span>`); scroll(); return; }
+  const tracks = ['Synthwave Dreams', 'Neon Protocol', 'Digital Rain', 'Cyber Pulse', 'Binary Sunset'];
+  const track = tracks[Math.floor(Math.random()*tracks.length)];
+  appendLine(`  <span class="cg">♪ Now playing:</span> <span class="ca">${track}</span>`);
+  appendLine(`  <span class="cd">Type 'music' again to stop</span>`);
+  let t = 0;
+  musicInterval = setInterval(() => {
+    const bars = Array.from({length:16}, () => {
+      const h = Math.floor(Math.random()*8);
+      const chars = ['▁','▂','▃','▄','▅','▆','▇','█'];
+      return `<span style="color:hsl(${t*2%360},100%,60%)">${chars[h]}</span>`;
+    }).join('');
+    const timeStr = `${String(Math.floor(t/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`;
+    // Update last music line
+    const lines = out.querySelectorAll('.music-viz');
+    if (lines.length) lines[lines.length-1].innerHTML = `  <span class="cd">${timeStr}</span>  ${bars}`;
+    else {
+      const d = document.createElement('div');
+      d.className = 'line music-viz';
+      d.innerHTML = `  <span class="cd">${timeStr}</span>  ${bars}`;
+      out.appendChild(d);
+    }
+    t++; scroll();
+  }, 200);
+}
+
+/* ═══════════════════════════════════════════════════
+   Weather (fake but fun)
+═══════════════════════════════════════════════════ */
+function getWeather() {
+  const conditions = [
+    { icon:'☀️', desc:'Sunny', temp:32, wind:12, hum:60 },
+    { icon:'🌧️', desc:'Rainy', temp:22, wind:20, hum:85 },
+    { icon:'⛅', desc:'Partly Cloudy', temp:27, wind:8, hum:70 },
+    { icon:'🌩️', desc:'Thunderstorm', temp:25, wind:35, hum:90 },
+  ];
+  const w = conditions[Math.floor(Math.random()*conditions.length)];
+  return [
+    ``,
+    `  <span class="ca">▸  Weather — Nha Trang, Vietnam 🇻🇳</span>`,
+    ``,
+    `  ${w.icon}  <span class="cw">${w.desc}</span>`,
+    `  <span class="cy">Temperature :</span> <span class="cw">${w.temp}°C</span>`,
+    `  <span class="cy">Wind        :</span> <span class="cw">${w.wind} km/h</span>`,
+    `  <span class="cy">Humidity    :</span> <span class="cw">${w.hum}%</span>`,
+    `  <span class="cd">Data source : fake-weather-api.nick.dev</span>`,
+    ``,
+  ];
+}
+
+/* ═══════════════════════════════════════════════════
+   Lolcat (rainbow text)
+═══════════════════════════════════════════════════ */
+function lolcat(text) {
+  return text.split('').map((c,i) => {
+    const hue = (i * 15) % 360;
+    return `<span style="color:hsl(${hue},100%,65%)">${c}</span>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════════
+   Cowsay
+═══════════════════════════════════════════════════ */
+function cowsay(msg) {
+  const line = '-'.repeat(msg.length + 2);
+  return [
+    ``,
+    `   +${line}+`,
+    `   | ${msg} |`,
+    `   +${line}+`,
+    `        \\   ^__^`,
+    `         \\  (oo)\\_______`,
+    `            (__)\\       )\\/\\`,
+    `                ||----w |`,
+    `                ||     ||`,
+    ``,
+  ];
+}
+
+/* ═══════════════════════════════════════════════════
+   Banner
+═══════════════════════════════════════════════════ */
+function bigBanner(text) {
+  // Simple chunky ASCII: each letter mapped
+  const letters = {
+    N:[' ███╗   ██╗',' ████╗  ██║',' ██╔██╗ ██║',' ██║╚██╗██║',' ██║ ╚████║',' ╚═╝  ╚═══╝'],
+    I:[' ██╗',' ██║',' ██║',' ██║',' ██║',' ╚═╝'],
+    C:[' ██████╗',' ██╔════╝',' ██║     ',' ██║     ',' ╚██████╗',' ╚═════╝'],
+    K:[' ██╗  ██╗',' ██║ ██╔╝',' █████╔╝ ',' ██╔═██╗ ',' ██║  ██╗',' ╚═╝  ╚═╝'],
+  };
+  if (!letters[text[0]]) return [`<span class="ca">  ██ ${text} ██</span>`];
+  const rows = 6;
+  const lines = [];
+  for (let r=0;r<rows;r++) {
+    let row='  ';
+    for (const ch of text.toUpperCase()) {
+      if(letters[ch]) row+=letters[ch][r]+'  ';
+    }
+    lines.push(`<span class="ca">${row}</span>`);
+  }
+  return ['', ...lines, ''];
+}
+
+/* ═══════════════════════════════════════════════════
+   Skill bars (animated)
+═══════════════════════════════════════════════════ */
+function skillBar(name, pct, color) {
+  const filled = Math.round(pct/100*24);
+  const empty  = 24 - filled;
+  const bar = `<span style="color:${color}">${'█'.repeat(filled)}</span><span class="dim2">${'░'.repeat(empty)}</span>`;
+  return `  <span class="cc">${name.padEnd(12)}</span> ${bar} <span class="cy">${pct}%</span>`;
+}
+
+/* ═══════════════════════════════════════════════════
+   Ping simulation
+═══════════════════════════════════════════════════ */
+async function ping(host) {
+  appendLine(`  <span class="cd">PING ${host} — 64 bytes of data:</span>`);
+  for (let i=0;i<4;i++) {
+    await new Promise(r=>setTimeout(r,300+Math.random()*200));
+    const ms = (Math.random()*30+5).toFixed(2);
+    const ttl = Math.floor(50+Math.random()*64);
+    appendLine(`  <span class="cg">64 bytes from ${host}: icmp_seq=${i+1} ttl=${ttl} time=${ms} ms</span>`);
+    beep(600,20); scroll();
+  }
+  appendLine(`  <span class="cd">--- ${host} ping statistics ---</span>`);
+  appendLine(`  <span class="cw">4 packets transmitted, 4 received, 0% packet loss</span>`);
+  appendLine(''); scroll();
+}
+
+/* ═══════════════════════════════════════════════════
+   Curl simulation
+═══════════════════════════════════════════════════ */
+async function curlSim(url) {
+  appendLine(`  <span class="cd">  % Total    % Received % Xferd</span>`);
+  await new Promise(r=>setTimeout(r,200));
+  appendLine(`  <span class="cg">100  1024  100  1024    0     0   4096      0 --:--:-- --:--:--</span>`);
+  await new Promise(r=>setTimeout(r,300));
+  const fakeJson = { status:'ok', url, server:'NickOS', latency:'12ms', data:{ message:'Hello from the terminal!' } };
+  appendLine(`  <span class="cy">${JSON.stringify(fakeJson, null, 2).replace(/\n/g,'\n  ')}</span>`);
+  appendLine(''); scroll();
+}
+
+/* ═══════════════════════════════════════════════════
+   Sudo
+═══════════════════════════════════════════════════ */
+async function sudo(arg) {
+  appendLine(`  <span class="cy">[sudo] password for nick: </span>`);
+  await new Promise(r=>setTimeout(r,1500));
+  appendLine(`  <span class="cr">sudo: Sorry, try again.</span>`);
+  await new Promise(r=>setTimeout(r,800));
+  appendLine(`  <span class="cr">sudo: 3 incorrect password attempts</span>`);
+  appendLine(`  <span class="cm">  (you can't escape this simulation 😈)</span>`);
+  appendLine(''); scroll();
+}
+
+/* ═══════════════════════════════════════════════════
+   Theme cycling
+═══════════════════════════════════════════════════ */
+const THEMES = [
+  { name:'Cyber Blue',   accent:'#00d4ff', cyan:'#4ec9b0', green:'#6bce9e' },
+  { name:'Matrix Green', accent:'#00ff88', cyan:'#00ff88', green:'#00cc66' },
+  { name:'Neon Pink',    accent:'#ff00aa', cyan:'#ff66cc', green:'#ff44cc' },
+  { name:'Solar Orange', accent:'#ff8c00', cyan:'#ffaa44', green:'#ffcc00' },
+  { name:'Violet Dream', accent:'#c586c0', cyan:'#9b59b6', green:'#8e44ad' },
+];
+let themeIdx = 0;
+function cycleTheme() {
+  themeIdx = (themeIdx+1) % THEMES.length;
+  const t = THEMES[themeIdx];
+  document.documentElement.style.setProperty('--accent', t.accent);
+  document.documentElement.style.setProperty('--cyan', t.cyan);
+  document.documentElement.style.setProperty('--green', t.green);
+  showToast(`Theme: ${t.name}`);
+  return [``, `  <span class="ca">Theme switched to:</span> <span class="cw">${t.name}</span>`, ``];
+}
+
+/* ═══════════════════════════════════════════════════
+   Stats dashboard
+═══════════════════════════════════════════════════ */
+function getStats() {
+  const up = Math.floor((Date.now()-startTime)/1000);
+  const m=Math.floor(up/60), s=up%60;
+  return [
+    ``,
+    `  <span class="ca">┌─────────────────────────────────┐</span>`,
+    `  <span class="ca">│</span>  <span class="cw">Terminal Stats</span>                <span class="ca">│</span>`,
+    `  <span class="ca">└─────────────────────────────────┘</span>`,
+    ``,
+    `  <span class="cy">Commands run   :</span> <span class="cw">${cmdCount}</span>`,
+    `  <span class="cy">Session uptime :</span> <span class="cw">${m}m ${s}s</span>`,
+    `  <span class="cy">History size   :</span> <span class="cw">${hist.length} entries</span>`,
+    `  <span class="cy">Font size      :</span> <span class="cw">${fontSize}px</span>`,
+    `  <span class="cy">Theme          :</span> <span class="cw">${THEMES[themeIdx].name}</span>`,
+    `  <span class="cy">Particles      :</span> <span class="cg">Active ●</span>`,
+    `  <span class="cy">Screensaver    :</span> <span class="cd">2min idle</span>`,
+    ``,
+  ];
+}
+
+/* ═══════════════════════════════════════════════════
+   COMMANDS
+═══════════════════════════════════════════════════ */
 const CMDS = {
   help: () => [
     ``,
-    `  <span class="ca">┌──────────────────────────────────────────────┐</span>`,
-    `  <span class="ca">│</span>  <span class="cw">Available Commands</span>                          <span class="ca">│</span>`,
-    `  <span class="ca">└──────────────────────────────────────────────┘</span>`,
+    `  <span class="ca">╔══════════════════════════════════════════════════╗</span>`,
+    `  <span class="ca">║</span>  <span class="cw" style="font-family:'Orbitron',monospace">NICK@UNIVERSE — TERMINAL v2.0</span>         <span class="ca">║</span>`,
+    `  <span class="ca">╚══════════════════════════════════════════════════╝</span>`,
     ``,
-    `  <span class="cc">whoami</span>         display profile info`,
-    `  <span class="cc">skills</span>         list tech stack & skills`,
-    `  <span class="cc">projects</span>       show featured projects`,
-    `  <span class="cc">contact</span>        get social & links`,
-    `  <span class="cc">motd</span>           message of the day`,
-    `  <span class="cc">ls</span>             list files`,
-    `  <span class="cc">cat &lt;file&gt;</span>     read a file`,
-    `  <span class="cc">neofetch</span>       system info + ascii art`,
-    `  <span class="cc">matrix</span>         enter the matrix (click/key to exit)`,
-    `  <span class="cc">clear</span>          clear screen  <span class="cd">(Ctrl+L)</span>`,
-    `  <span class="cc">history</span>        show command history`,
-    `  <span class="cc">date</span>           current date`,
-    `  <span class="cc">uname</span>          kernel info`,
-    `  <span class="cc">echo &lt;text&gt;</span>    print text`,
+    `  <span class="cw">┌ CORE ────────────────────────────────┐</span>`,
+    `  <span class="cc">  whoami     </span><span class="cd">profile info & bio</span>`,
+    `  <span class="cc">  skills     </span><span class="cd">tech stack with animated bars</span>`,
+    `  <span class="cc">  projects   </span><span class="cd">featured project showcase</span>`,
+    `  <span class="cc">  contact    </span><span class="cd">social links & handles</span>`,
+    `  <span class="cc">  neofetch   </span><span class="cd">system info + ascii art</span>`,
+    ``,
+    `  <span class="cw">┌ FX & EFFECTS ────────────────────────┐</span>`,
+    `  <span class="cm">  matrix     </span><span class="cd">enter the matrix (click to exit)</span>`,
+    `  <span class="cm">  rain       </span><span class="cd">cyber rain overlay (8 seconds)</span>`,
+    `  <span class="cm">  fireworks  </span><span class="cd">trigger confetti explosion</span>`,
+    `  <span class="cm">  glitch     </span><span class="cd">screen glitch effect</span>`,
+    `  <span class="cm">  lolcat     </span><span class="cd">rainbow any text</span>`,
+    `  <span class="cm">  banner     </span><span class="cd">large ASCII text</span>`,
+    `  <span class="cm">  color      </span><span class="cd">color palette demo</span>`,
+    ``,
+    `  <span class="cw">┌ TOOLS ───────────────────────────────┐</span>`,
+    `  <span class="cg">  ping &lt;host&gt;    </span><span class="cd">simulate ICMP ping</span>`,
+    `  <span class="cg">  curl &lt;url&gt;    </span><span class="cd">fake HTTP request</span>`,
+    `  <span class="cg">  sudo &lt;cmd&gt;    </span><span class="cd">you know what this does</span>`,
+    `  <span class="cg">  weather       </span><span class="cd">Nha Trang weather</span>`,
+    `  <span class="cg">  music         </span><span class="cd">music visualizer (toggle)</span>`,
+    `  <span class="cg">  stats         </span><span class="cd">session statistics</span>`,
+    `  <span class="cg">  hack          </span><span class="cd">l33t hacking simulation</span>`,
+    `  <span class="cg">  fortune       </span><span class="cd">wisdom quote</span>`,
+    `  <span class="cg">  cowsay &lt;msg&gt;  </span><span class="cd">a talking cow</span>`,
+    ``,
+    `  <span class="cw">┌ SYSTEM ──────────────────────────────┐</span>`,
+    `  <span class="cy">  motd         </span><span class="cd">message of the day</span>`,
+    `  <span class="cy">  ls           </span><span class="cd">list filesystem</span>`,
+    `  <span class="cy">  cat &lt;file&gt;   </span><span class="cd">read a file</span>`,
+    `  <span class="cy">  date         </span><span class="cd">current datetime</span>`,
+    `  <span class="cy">  uname        </span><span class="cd">kernel info</span>`,
+    `  <span class="cy">  echo &lt;text&gt;  </span><span class="cd">print text</span>`,
+    `  <span class="cy">  history      </span><span class="cd">command history</span>`,
+    `  <span class="cy">  theme        </span><span class="cd">cycle color themes</span>`,
+    `  <span class="cy">  snake        </span><span class="cd">play snake (WASD)</span>`,
+    `  <span class="cy">  credits      </span><span class="cd">about this terminal</span>`,
+    `  <span class="cy">  clear        </span><span class="cd">clear screen  (Ctrl+L)</span>`,
+    ``,
+    `  <span class="cd">Tip: Right-click for context menu | Tab to autocomplete</span>`,
     ``,
   ],
 
   whoami: () => [
     ``,
-    `  <span class="ca">╔══════════════════════════════════════════╗</span>`,
-    `  <span class="ca">║</span>  <span class="cw">NGO HUU LOC</span>  <span class="cd">(Nick)</span>                    <span class="ca">║</span>`,
-    `  <span class="ca">╚══════════════════════════════════════════╝</span>`,
+    `  <span class="ca">╔═══════════════════════════════════════╗</span>`,
+    `  <span class="ca">║</span>  <span class="cw">NGO HUU LOC</span>  <span class="cd">alias</span>  <span class="ca">NICK</span>           <span class="ca">║</span>`,
+    `  <span class="ca">╚═══════════════════════════════════════╝</span>`,
     ``,
-    `  <span class="cy">Role</span>      <span class="cd">─</span>  Full-Stack Engineer`,
-    `  <span class="cy">Location</span>  <span class="cd">─</span>  Vietnam 🇻🇳`,
-    `  <span class="cy">Languages</span> <span class="cd">─</span>  Vietnamese · English`,
-    `  <span class="cy">Focus</span>     <span class="cd">─</span>  Web Dev · UI/UX · Systems`,
-    `  <span class="cy">Status</span>    <span class="cd">─</span>  <span class="cg">● ONLINE</span>  Building something epic`,
-    `  <span class="cy">Motto</span>     <span class="cd">─</span>  <span class="ca">"Choose to become extraordinary"</span>`,
+    `  <span class="cy">Role     </span>  Full-Stack Engineer`,
+    `  <span class="cy">Location </span>  Vietnam 🇻🇳  <span class="cd">(UTC+7)</span>`,
+    `  <span class="cy">Status   </span>  <span class="cg">● Open to collaborations</span>`,
+    `  <span class="cy">Focus    </span>  UI/UX · Systems Programming · C++`,
+    `  <span class="cy">Languages</span>  C · C++ · Python · JavaScript · TypeScript`,
+    ``,
+    `  <span class="cw">About:</span>`,
+    `  <span class="text">  I build things that are fast, beautiful, and reliable.</span>`,
+    `  <span class="text">  Passionate about low-level systems and great interfaces.</span>`,
+    `  <span class="text">  When I'm not coding, I'm thinking about coding.</span>`,
+    ``,
+    `  <span class="cd">→ Run <span class="cc">skills</span> | <span class="cc">projects</span> | <span class="cc">contact</span> to learn more</span>`,
     ``,
   ],
 
   skills: () => [
     ``,
-    `  <span class="cw">⚙  Systems & Low-Level</span>`,
-    `  <span class="cc">C          </span> <span class="cg">███████████████░░░░░░░░░</span>  <span class="cy">75%</span>`,
-    `  <span class="cc">C++        </span> <span class="cg">███████████████░░░░░░░░░</span>  <span class="cy">75%</span>`,
-    `  <span class="cc">Python     </span> <span class="cg">████████████████░░░░░░░░</span>  <span class="cy">80%</span>`,
-    `  <span class="cc">Ruby       </span> <span class="cg">████████████░░░░░░░░░░░░</span>  <span class="cy">60%</span>`,
+    `  <span class="ca">▸  Tech Stack & Skills</span>`,
     ``,
-    `  <span class="cw">🎨 Frontend</span>`,
-    `  <span class="cc">HTML/CSS   </span> <span class="ca">████████████████████████</span>  <span class="cy">95%</span>`,
-    `  <span class="cc">JavaScript </span> <span class="ca">███████████████████████░</span>  <span class="cy">92%</span>`,
-    `  <span class="cc">TypeScript </span> <span class="ca">█████████████████████░░░</span>  <span class="cy">88%</span>`,
-    `  <span class="cc">Vue.js     </span> <span class="ca">██████████████████████░░</span>  <span class="cy">90%</span>`,
-    `  <span class="cc">UI/UX      </span> <span class="ca">█████████████████░░░░░░░</span>  <span class="cy">85%</span>`,
+    `  <span class="cw">⚡  Systems & Native</span>`,
+    skillBar('C++',      95, '#00d4ff'),
+    skillBar('C',        88, '#4ec9b0'),
+    skillBar('Python',   82, '#6bce9e'),
+    ``,
+    `  <span class="cw">🌐  Frontend</span>`,
+    skillBar('JavaScript', 90, '#e5c07b'),
+    skillBar('TypeScript', 85, '#569cd6'),
+    skillBar('Vue.js',     88, '#6bce9e'),
+    skillBar('UI/UX',      80, '#c586c0'),
     ``,
     `  <span class="cw">🗄  Backend & Infra</span>`,
-    `  <span class="cc">Supabase   </span> <span class="cy">████████████████░░░░░░░░</span>  <span class="cy">80%</span>`,
-    `  <span class="cc">PostgreSQL </span> <span class="cy">██████████████░░░░░░░░░░</span>  <span class="cy">70%</span>`,
-    `  <span class="cc">Git        </span> <span class="cy">██████████████████████░░</span>  <span class="cy">90%</span>`,
+    skillBar('Supabase',   78, '#ff8c00'),
+    skillBar('PostgreSQL', 72, '#569cd6'),
+    skillBar('Flask/FastAPI',80,'#4ec9b0'),
+    skillBar('Git',        92, '#6bce9e'),
+    ``,
+    `  <span class="cw">🔧  Tools</span>`,
+    `  <span class="cc">VSCode · Neovim · MSYS2 · CMake · pybind11 · Linux</span>`,
     ``,
   ],
 
@@ -272,18 +1433,25 @@ const CMDS = {
     ``,
     `  <span class="ca">▸  Featured Projects</span>`,
     ``,
-    `  <span class="cw">01 — Portfolio Website</span>`,
-    `  <span class="cd">   Stack  :</span> Vue.js + Supabase + CSS`,
-    `  <span class="cd">   Status :</span> <span class="cg">● Live</span>`,
-    `  <span class="cd">   URL    :</span> github.com/NgoHuuLoc0612`,
+    `  <span class="cw">01 — Physics Visualizer</span>`,
+    `  <span class="cd">     Stack  :</span> C++/pybind11 · Flask · WebGL`,
+    `  <span class="cd">     Info   :</span> 9 simulation classes (N-body, FDTD, LBM...)`,
+    `  <span class="cd">     Status :</span> <span class="cg">● In Progress</span>`,
     ``,
-    `  <span class="cw">02 — Systems Experiments (C/C++)</span>`,
-    `  <span class="cd">   Stack  :</span> C · C++ · Linux`,
-    `  <span class="cd">   Status :</span> <span class="cy">● In Progress</span>`,
+    `  <span class="cw">02 — NEXUS News Dashboard</span>`,
+    `  <span class="cd">     Stack  :</span> Flask · SocketIO · Three.js · D3`,
+    `  <span class="cd">     Info   :</span> 65+ RSS feeds, 10 languages, 3D globe`,
+    `  <span class="cd">     Status :</span> <span class="cg">● Live</span>`,
     ``,
-    `  <span class="cw">03 — UI Component Library</span>`,
-    `  <span class="cd">   Stack  :</span> Vue.js + TypeScript`,
-    `  <span class="cd">   Status :</span> <span class="cy">● In Progress</span>`,
+    `  <span class="cw">03 — F++ Compiler (FPP)</span>`,
+    `  <span class="cd">     Stack  :</span> C++ · pybind11 · LLVM-inspired`,
+    `  <span class="cd">     Info   :</span> Custom language: lexer, parser, codegen`,
+    `  <span class="cd">     Status :</span> <span class="cy">● In Progress</span>`,
+    ``,
+    `  <span class="cw">04 — BTC Predictor v3</span>`,
+    `  <span class="cd">     Stack  :</span> C++/pybind11 · FastAPI · ML`,
+    `  <span class="cd">     Info   :</span> 12 models: LSTM, Transformer, TCN...`,
+    `  <span class="cd">     Status :</span> <span class="cy">● In Progress</span>`,
     ``,
     `  <span class="cd">→ github.com/NgoHuuLoc0612</span>`,
     ``,
@@ -295,150 +1463,190 @@ const CMDS = {
     ``,
     `  <span class="cc">GitHub   </span> <span class="cd">→</span>  <span class="cb">github.com/NgoHuuLoc0612</span>`,
     `  <span class="cc">Twitter  </span> <span class="cd">→</span>  <span class="cb">@benhan871986</span>`,
+    `  <span class="cc">Location </span> <span class="cd">→</span>  <span class="text">Nha Trang, Vietnam 🇻🇳</span>`,
     ``,
-    `  <span class="cg">Open to collaborations & cool projects!</span>`,
+    `  <span class="cg">✦  Open to collaborations & cool projects!</span>`,
+    `  <span class="cd">   DM me on Twitter or open a GitHub issue.</span>`,
     ``,
   ],
 
-  motd: () => [
-    ``,
-    `  <span class="ca">✦  Message of the Day</span>`,
-    ``,
-    `  <span class="cw">"I think it is absolutely possible for</span>`,
-    `  <span class="cw"> an ordinary person to choose to become</span>`,
-    `  <span class="cw"> extraordinary."</span>`,
-    ``,
-    `  <span class="cd">  — Elon Musk</span>`,
-    ``,
-    `  <span class="cd">Today: ${new Date().toDateString()}</span>`,
-    ``,
-  ],
+  motd: () => {
+    const f = FORTUNES[Math.floor(Math.random()*FORTUNES.length)];
+    return [
+      ``,
+      `  <span class="ca">✦  Message of the Day</span>`,
+      ``,
+      `  <span class="cw">${f[0]}</span>`,
+      ``,
+      `  <span class="cd">  ${f[1]}</span>`,
+      ``,
+      `  <span class="cd">  ${new Date().toDateString()} · ${new Date().toLocaleTimeString()}</span>`,
+      ``,
+    ];
+  },
+
+  fortune: () => {
+    const f = FORTUNES[Math.floor(Math.random()*FORTUNES.length)];
+    return [``, `  <span class="ca">${f[0]}</span>`, `  <span class="cd">  ${f[1]}</span>`, ``];
+  },
 
   ls: () => [
     ``,
-    `  <span class="cc">📁 projects/</span>   <span class="cc">📁 skills/</span>   <span class="cc">📁 assets/</span>`,
-    `  <span class="cg">📄 README.md</span>   <span class="cy">📄 motto.txt</span> <span class="cy">📄 bio.txt</span>`,
-    `  <span class="cg">📄 .gitconfig</span>  <span class="cr">🔒 secrets</span>`,
+    `  <span class="cy">total 42</span>`,
+    `  <span class="cd">drwxr-xr-x</span>  <span class="cc">projects/</span>       <span class="cd">4.0K</span>`,
+    `  <span class="cd">drwxr-xr-x</span>  <span class="cc">skills/</span>         <span class="cd">4.0K</span>`,
+    `  <span class="cd">drwxr-xr-x</span>  <span class="cc">assets/</span>         <span class="cd">4.0K</span>`,
+    `  <span class="cd">-rw-r--r--</span>  <span class="cg">README.md</span>       <span class="cd">2.1K</span>`,
+    `  <span class="cd">-rw-r--r--</span>  <span class="cy">motto.txt</span>       <span class="cd">128B</span>`,
+    `  <span class="cd">-rw-r--r--</span>  <span class="cy">bio.txt</span>         <span class="cd">512B</span>`,
+    `  <span class="cd">-rw-r--r--</span>  <span class="cy">.gitconfig</span>      <span class="cd">256B</span>`,
+    `  <span class="cd">-rw-------</span>  <span class="cr">🔒 secrets</span>       <span class="cd">???</span>`,
+    `  <span class="cd">-rwxr-xr-x</span>  <span class="cm">startup.sh</span>      <span class="cd">1.2K</span>`,
     ``,
   ],
 
-  date: () => [``, `  ${new Date().toString()}`, ``],
+  date: () => [``, `  <span class="cw">${new Date().toString()}</span>`, `  <span class="cd">Unix: ${Math.floor(Date.now()/1000)}</span>`, ``],
 
   uname: () => [
     ``,
-    `  <span class="cc">NickOS 25.06 x86_64</span> — GNU/Vietnam`,
-    `  Kernel: <span class="cg">passion-6.9.0-extraordinary</span>`,
-    `  Uptime: building since birth`,
+    `  <span class="cc">NickOS 25.06.0 x86_64</span>`,
+    `  <span class="cd">Kernel :</span> passion-6.9.0-extraordinary-NICKOS-SMP`,
+    `  <span class="cd">Uptime :</span> building since birth`,
+    `  <span class="cd">CPU    :</span> Intel(R) Core(TM) i7 × 12 @ 5.2GHz`,
+    `  <span class="cd">RAM    :</span> 32GB DDR5 — <span class="cg">all dedicated to dreams</span>`,
+    `  <span class="cd">GPU    :</span> RTX 4090 — <span class="cy">for shipping fast</span>`,
+    `  <span class="cd">Shell  :</span> zsh 5.9 + oh-my-zsh`,
+    `  <span class="cd">Editor :</span> Neovim + VSCode`,
+    ``,
+  ],
+
+  neofetch: () => [
+    ``,
+    `  <span class="ca">    .--.      </span>   <span class="cw">nick</span><span class="cd">@</span><span class="cc">universe</span>`,
+    `  <span class="ca">   |o_o |     </span>   <span class="cd">──────────────────────────</span>`,
+    `  <span class="ca">   |:_/ |     </span>   <span class="cy">OS     </span>  NickOS 25.06.0 🇻🇳`,
+    `  <span class="ca">  //   \\ \\   </span>   <span class="cy">Host   </span>  HP Victus 15`,
+    `  <span class="ca"> (|     | )  </span>   <span class="cy">Kernel </span>  passion-6.9.0-extraordinary`,
+    `  <span class="ca">/'\\___/'\`\\  </span>   <span class="cy">Shell  </span>  zsh + neovim`,
+    `  <span class="ca">  \\_____/   </span>   <span class="cy">Editor </span>  VSCode`,
+    `             <span class="ca">  </span>   <span class="cy">Stack  </span>  C++ · Vue · TypeScript`,
+    `             <span class="ca">  </span>   <span class="cy">Focus  </span>  UI/UX + Systems`,
+    `             <span class="ca">  </span>   <span class="cy">Status </span>  <span class="cg">● Building</span>`,
+    ``,
+    `  <span style="color:#ff5f57">████</span><span style="color:#febc2e">████</span><span style="color:#28c840">████</span><span style="color:#00d4ff">████</span><span style="color:#c586c0">████</span><span style="color:#e5c07b">████</span>`,
+    ``,
+  ],
+
+  color: () => [
+    ``,
+    `  <span class="ca">▸  Color Palette — NickOS Terminal</span>`,
+    ``,
+    `  <span style="background:#ff5f57;color:#000;padding:0 2px">  red   </span>  <span style="background:#febc2e;color:#000;padding:0 2px">  yellow </span>  <span style="background:#28c840;color:#000;padding:0 2px">  green  </span>`,
+    `  <span style="background:#00d4ff;color:#000;padding:0 2px">  cyan  </span>  <span style="background:#569cd6;color:#000;padding:0 2px">  blue   </span>  <span style="background:#c586c0;color:#000;padding:0 2px">  purple </span>`,
+    `  <span style="background:#ff00aa;color:#fff;padding:0 2px"> magenta</span>  <span style="background:#00ff88;color:#000;padding:0 2px">  green2 </span>  <span style="background:#f4a261;color:#000;padding:0 2px">  orange </span>`,
+    ``,
+    `  <span class="cr">███</span> <span class="cy">███</span> <span class="cg">███</span> <span class="ca">███</span> <span class="cb">███</span> <span class="pa">███</span> <span class="cm">███</span> <span class="cg2">███</span> <span class="co">███</span>`,
     ``,
   ],
 
   history: (h) => {
     if (!h.length) return [``, `  <span class="cd">(no history yet)</span>`, ``];
-    return [``, ...h.slice(0,20).map((c,i)=>
-      `  <span class="cd">${String(i+1).padStart(3,' ')}</span>  ${esc(c)}`
+    return [``, ...h.slice(0,30).map((c,i) =>
+      `  <span class="cd">${String(i+1).padStart(4,' ')}</span>  <span class="cc">${esc(c)}</span>`
     ), ``];
   },
 
-  neofetch: () => [
+  clear: () => { out.innerHTML = ''; return []; },
+
+  theme: cycleTheme,
+  stats: getStats,
+  weather: getWeather,
+
+  screensaver: () => { activateScreensaver(); return []; },
+
+  credits: () => [
     ``,
-    `  <span class="cc">    ⣿⣿⣿⣿⣿⣿   </span>   <span class="cw">nick</span><span class="cd">@</span><span class="cc">universe</span>`,
-    `  <span class="cc">  ⣿⣿⣿⣿⣿⣿⣿⣿ </span>   <span class="cd">─────────────────────</span>`,
-    `  <span class="cc">⣿⣿</span><span class="ca">⣿⣿⣿⣿⣿⣿</span><span class="cc">⣿⣿</span>   <span class="cy">OS</span>      NickOS 25.06 🇻🇳`,
-    `  <span class="cc">⣿⣿</span><span class="ca">⣿⣿⣿⣿⣿⣿</span><span class="cc">⣿⣿</span>   <span class="cy">Shell</span>   zsh + neovim`,
-    `  <span class="cc">  ⣿⣿⣿⣿⣿⣿⣿⣿ </span>   <span class="cy">Editor</span>  VSCode`,
-    `  <span class="cc">    ⣿⣿⣿⣿⣿⣿   </span>   <span class="cy">Stack</span>   C · C++ · Vue · TS`,
-    `                     <span class="cy">Focus</span>   UI/UX + Systems`,
-    `                     <span class="cy">Status</span>  <span class="cg">● Building</span>`,
+    `  <span class="ca">╔═══════════════════════════════════╗</span>`,
+    `  <span class="ca">║</span>  <span class="cw">NICK@UNIVERSE Terminal v2.0</span>   <span class="ca">║</span>`,
+    `  <span class="ca">╚═══════════════════════════════════╝</span>`,
     ``,
-    `  <span style="color:#ff5f57">███</span><span style="color:#febc2e">███</span><span style="color:#28c840">███</span><span style="color:#00d4ff">███</span><span style="color:#c586c0">███</span><span style="color:#e5c07b">███</span>`,
+    `  <span class="cy">Built by</span>   Ngo Huu Loc (Nick)`,
+    `  <span class="cy">Engine  </span>   Vanilla JS + Canvas + WebAudio`,
+    ``,
+    `  <span class="cw">CDN Libraries:</span>`,
+    `  <span class="cc">  • GSAP 3.12.5</span>        <span class="cd">animations</span>`,
+    `  <span class="cc">  • Particles.js 2.0</span>   <span class="cd">background particles</span>`,
+    `  <span class="cc">  • Typed.js 2.1</span>       <span class="cd">typing effects</span>`,
+    `  <span class="cc">  • Chroma.js 2.4</span>      <span class="cd">color science</span>`,
+    `  <span class="cc">  • Anime.js 3.2</span>       <span class="cd">element animations</span>`,
+    `  <span class="cc">  • Three.js r128</span>      <span class="cd">3D (ready for use)</span>`,
+    `  <span class="cc">  • Howler.js 2.2</span>      <span class="cd">audio engine</span>`,
+    `  <span class="cc">  • canvas-confetti</span>    <span class="cd">fireworks effect</span>`,
+    `  <span class="cc">  • Orbitron font</span>      <span class="cd">display typography</span>`,
+    `  <span class="cc">  • JetBrains Mono</span>     <span class="cd">terminal font</span>`,
+    ``,
+    `  <span class="cd">© 2025 Nick. Built with ❤️ in Vietnam.</span>`,
     ``,
   ],
-
-  clear: () => { out.innerHTML = ''; return []; },
 };
 
+/* ═══════════════════════════════════════════════════
+   Cat files
+═══════════════════════════════════════════════════ */
 const CAT_FILES = {
   'motto.txt': [
     ``, `  <span class="ca">"Choose to become extraordinary."</span>`,
-    ``, `  <span class="cd">Author : Nick (Ngo Huu Loc)</span>`, ``,
+    ``, `  <span class="cd">  — Nick (Ngo Huu Loc) · 2025</span>`, ``,
   ],
   'bio.txt': [
     ``,
-    `  Name     : Ngo Huu Loc (Nick)`,
-    `  Role     : Full-Stack Engineer`,
-    `  Location : Vietnam 🇻🇳`,
-    `  Langs    : C, C++, Python, JS, TS, Ruby`,
-    `  Loves    : Clean code, great UI, fast systems`,
+    `  <span class="cy">Name     </span>  Ngo Huu Loc (Nick)`,
+    `  <span class="cy">Role     </span>  Full-Stack Engineer`,
+    `  <span class="cy">Location </span>  Nha Trang, Vietnam 🇻🇳`,
+    `  <span class="cy">Languages</span>  C, C++, Python, JS, TS`,
+    `  <span class="cy">Loves    </span>  Clean code · Great UI · Fast systems`,
+    `  <span class="cy">GitHub   </span>  github.com/NgoHuuLoc0612`,
     ``,
   ],
   '.gitconfig': [`  <span class="cr">[error] Permission denied (read-only)</span>`, ``],
-  'README.md':  [`  <span class="cd">→ See github.com/NgoHuuLoc0612 for the full version.</span>`, ``],
-  'secrets':    [`  <span class="cr">🔒 Access denied. Nice try, hacker.</span>`, ``],
+  'README.md': [
+    ``, `  <span class="cd">→ See github.com/NgoHuuLoc0612 for full docs.</span>`,
+    `  <span class="cd">  This terminal is an interactive portfolio.</span>`, ``,
+  ],
+  'secrets': [`  <span class="cr">🔒 Access denied. Nice try, hacker.</span>`, `  <span class="cd">  (Run 'hack' for a more exciting experience)</span>`, ``],
+  'startup.sh': [
+    ``,
+    `  <span class="cg">#!/bin/zsh</span>`,
+    `  <span class="cd"># NickOS startup script</span>`,
+    `  <span class="cc">echo</span> <span class="cy">"Booting passion-kernel..."</span>`,
+    `  <span class="cc">load-dreams</span> --intensity=max`,
+    `  <span class="cc">start-building</span> --never-stop`,
+    ``,
+  ],
 };
 
-/* ── MATRIX ── */
-const canvas = document.getElementById('matrix-canvas');
-const matExit = document.getElementById('matrix-exit');
-const ctx = canvas.getContext('2d');
-let matRaf = null;
-let drops = [];
-
-function startMatrix() {
-  canvas.classList.add('active');
-  matExit.classList.add('active');
-  canvas.width  = window.innerWidth;
-  canvas.height = window.innerHeight;
-  const cols = Math.floor(canvas.width / 16);
-  drops = Array(cols).fill(1);
-
-  function draw() {
-    ctx.fillStyle = 'rgba(0,0,0,0.05)';
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.fillStyle = '#00d4ff';
-    ctx.font = '15px monospace';
-    const chars = 'アイウエオカキクケコ0123456789ABCDEF@#$%';
-    drops.forEach((y,i)=>{
-      const ch = chars[Math.floor(Math.random()*chars.length)];
-      ctx.fillStyle = Math.random()>.9 ? '#ffffff' : '#00d4ff';
-      ctx.fillText(ch, i*16, y*16);
-      if(y*16>canvas.height && Math.random()>.975) drops[i]=0;
-      drops[i]++;
-    });
-    matRaf = requestAnimationFrame(draw);
-  }
-  draw();
-}
-
-function stopMatrix() {
-  cancelAnimationFrame(matRaf);
-  canvas.classList.remove('active');
-  matExit.classList.remove('active');
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  appendLine(`  <span class="cg">Exiting matrix... welcome back.</span>`);
-  appendLine('');
-  scroll();
-}
-
-canvas.addEventListener('click', stopMatrix);
-matExit.addEventListener('click', stopMatrix);
-document.addEventListener('keydown', e => {
-  if (canvas.classList.contains('active')) { stopMatrix(); }
-});
-
-/* ── HINTS ── */
-const HINT_CMDS = ['help','whoami','skills','projects','contact','neofetch','matrix','ls','clear'];
+/* ═══════════════════════════════════════════════════
+   Hints bar
+═══════════════════════════════════════════════════ */
+const HINT_CMDS = ['help','whoami','skills','projects','contact','neofetch','matrix','rain','fireworks','snake','hack','fortune','weather','theme','stats','credits'];
 HINT_CMDS.forEach(c => {
   const b = document.createElement('button');
   b.className = 'hbtn'; b.textContent = c;
-  b.onclick = () => run(c);
+  b.onclick = () => { beep(440, 30); run(c); };
   hints.appendChild(b);
 });
 
-/* ── RUNNER ── */
-function run(raw) {
+/* ═══════════════════════════════════════════════════
+   Command runner
+═══════════════════════════════════════════════════ */
+async function run(raw) {
   const cmd = raw.trim();
   if (!cmd) return;
-  hist.unshift(cmd); hi = -1;
+  hist.unshift(cmd); hi = -1; cmdCount++;
+  acHint.textContent = '';
+  document.getElementById('sb-cmds').textContent = `cmds: ${cmdCount}`;
+  beep(330, 20);
+  glitch();
 
   appendLine(`${PROMPT} <span style="color:var(--text)">${esc(cmd)}</span>`);
 
@@ -451,42 +1659,163 @@ function run(raw) {
     const lines = CAT_FILES[f];
     if (lines) lines.forEach(l => appendLine(l));
     else appendLine(`  <span class="cr">cat: ${esc(f||'')}: No such file or directory</span>`);
+    appendLine(''); scroll();
   } else if (verb === 'echo') {
     appendLine(`  ${esc(arg)}`);
+    appendLine(''); scroll();
+  } else if (verb === 'lolcat') {
+    const text = arg || 'try: lolcat hello world';
+    appendLine(`  ${lolcat(text)}`);
+    appendLine(''); scroll();
+  } else if (verb === 'banner') {
+    const text = (arg || 'NICK').toUpperCase().slice(0,4);
+    bigBanner(text).forEach(l => appendLine(l));
+    scroll();
+  } else if (verb === 'cowsay') {
+    cowsay(arg || 'Hello, World!').forEach(l => appendLine(l));
+    scroll();
   } else if (verb === 'matrix') {
-    appendLine(`  <span class="cg">Entering the Matrix… click or press any key to exit.</span>`);
+    appendLine(`  <span class="cg">Entering the Matrix... click or press any key to exit.</span>`);
     appendLine(''); scroll();
     setTimeout(startMatrix, 600);
     return;
+  } else if (verb === 'rain') {
+    appendLine(`  <span class="ca">Cyber rain activated for 8 seconds...</span>`);
+    appendLine(''); scroll();
+    startRain();
+  } else if (verb === 'fireworks') {
+    appendLine(`  <span class="cm">🎆 Launching fireworks!</span>`);
+    appendLine(''); scroll();
+    setTimeout(fireFireworks, 200);
+  } else if (verb === 'glitch') {
+    appendLine(`  <span class="cr">Triggering glitch storm...</span>`);
+    appendLine(''); scroll();
+    for(let i=0;i<8;i++) setTimeout(glitch, i*200);
+  } else if (verb === 'hack') {
+    await hackSim();
+  } else if (verb === 'snake') {
+    appendLine(`  <span class="cg">Starting Snake — WASD to move, Q to quit</span>`);
+    appendLine(''); scroll();
+    startSnake();
+    return;
+  } else if (verb === 'ping') {
+    const host = arg || 'github.com';
+    await ping(host);
+    return;
+  } else if (verb === 'curl') {
+    await curlSim(arg || 'https://api.nick.dev/info');
+    return;
+  } else if (verb === 'sudo') {
+    await sudo(arg);
+    return;
+  } else if (verb === 'music') {
+    startMusic();
+    if (!musicInterval) { appendLine(''); scroll(); }
+    return;
   } else if (verb === 'history') {
     CMDS.history(hist).forEach(l => appendLine(l));
+    appendLine(''); scroll();
   } else if (CMDS[verb]) {
     const lines = CMDS[verb]();
-    if (lines) lines.forEach(l => appendLine(l));
+    if (lines) { lines.forEach(l => appendLine(l)); scroll(); }
   } else {
     appendLine(`  <span class="cr">zsh: command not found: ${esc(verb)}</span>`);
-    appendLine(`  <span class="cd">Type <span class="cc">help</span> for available commands.</span>`);
+    appendLine(`  <span class="cd">  Type <span class="cc">help</span> to see all commands.</span>`);
+    appendLine(''); scroll();
   }
 
-  appendLine(''); scroll(); inp.value = '';
+  if (!['ping','curl','sudo','hack','music','snake'].includes(verb)) {
+    appendLine(''); scroll();
+  }
+  inp.value = '';
 }
 
-/* ── INPUT ── */
+/* ═══════════════════════════════════════════════════
+   Input handling
+═══════════════════════════════════════════════════ */
 inp.addEventListener('keydown', e => {
-  if (e.key === 'Enter') { run(inp.value); }
-  else if (e.key === 'ArrowUp')   { e.preventDefault(); if (hi < hist.length-1) { hi++; inp.value = hist[hi]; } }
-  else if (e.key === 'ArrowDown') { e.preventDefault(); if (hi > 0) { hi--; inp.value = hist[hi]; } else { hi=-1; inp.value=''; } }
-  else if (e.key === 'Tab')       { e.preventDefault(); const v=inp.value.trim(); const m=Object.keys(CMDS).find(c=>c.startsWith(v)&&c!==v); if(m) inp.value=m; }
-  else if (e.key==='l' && e.ctrlKey) { e.preventDefault(); out.innerHTML=''; }
+  if (e.key === 'Enter') {
+    run(inp.value);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (hi < hist.length-1) { hi++; inp.value = hist[hi]; }
+  } else if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (hi > 0) { hi--; inp.value = hist[hi]; } else { hi=-1; inp.value=''; }
+  } else if (e.key === 'Tab') {
+    e.preventDefault();
+    const v = inp.value.trim();
+    const m = ALL_CMDS.find(c => c.startsWith(v) && c !== v);
+    if (m) { inp.value = m; acHint.textContent = ''; }
+  } else if (e.key === 'l' && e.ctrlKey) {
+    e.preventDefault(); out.innerHTML = '';
+  }
 });
 
-/* ── BOOT ── */
-[
-  `<span class="cd">Last login: ${new Date().toUTCString()}</span>`,
-  `<span class="cg">Welcome to nick@universe</span> <span class="cd">— Type </span><span class="cc">help</span><span class="cd"> to get started</span>`,
-  ``,
-].forEach(l => appendLine(l));
-inp.focus();
+inp.addEventListener('click', () => {
+  document.getElementById('screensaver').classList.remove('active');
+  inp.focus();
+});
+
+/* Focus the input on any keypress */
+document.addEventListener('keypress', e => {
+  if (!['INPUT','TEXTAREA','BUTTON'].includes(e.target.tagName) &&
+      !canvas.classList.contains('active')) {
+    inp.focus();
+  }
+});
+
+/* ═══════════════════════════════════════════════════
+   BOOT SEQUENCE
+═══════════════════════════════════════════════════ */
+const bootMessages = [
+  'Loading kernel modules...',
+  'Initializing neural interface...',
+  'Mounting filesystem...',
+  'Starting particle engine...',
+  'Calibrating ASCII renderer...',
+  'Loading skill database...',
+  'Establishing uplink...',
+  'System ready.',
+];
+
+(async function boot() {
+  const fill = document.getElementById('boot-fill');
+  const status = document.getElementById('boot-status');
+  for (let i=0; i<bootMessages.length; i++) {
+    status.textContent = bootMessages[i];
+    fill.style.width = ((i+1)/bootMessages.length*100) + '%';
+    await new Promise(r => setTimeout(r, 120 + Math.random()*100));
+  }
+  await new Promise(r => setTimeout(r, 300));
+  const overlay = document.getElementById('boot-overlay');
+  overlay.classList.add('hidden');
+  setTimeout(() => { overlay.style.display='none'; inp.focus(); }, 500);
+
+  // Boot output
+  appendLine(`<span class="cd">Last login: ${new Date().toUTCString()} on ttys001</span>`, false);
+  appendLine(``, false);
+
+  // Animated ASCII art header with GSAP
+  const headerLines = [
+    `  <span class="ca" style="font-family:'JetBrains Mono',monospace;font-size:11px">███╗   ██╗██╗ ██████╗██╗  ██╗</span>`,
+    `  <span class="ca" style="font-size:11px">████╗  ██║██║██╔════╝██║ ██╔╝</span>`,
+    `  <span class="ca" style="font-size:11px">██╔██╗ ██║██║██║     █████╔╝ </span>`,
+    `  <span class="ca" style="font-size:11px">██║╚██╗██║██║██║     ██╔═██╗ </span>`,
+    `  <span class="ca" style="font-size:11px">██║ ╚████║██║╚██████╗██║  ██╗</span>`,
+    `  <span class="ca" style="font-size:11px">╚═╝  ╚═══╝╚═╝ ╚═════╝╚═╝  ╚═╝</span>`,
+  ];
+  headerLines.forEach(l => appendLine(l, false));
+  appendLine(``, false);
+  appendLine(`  <span class="cw">Terminal v2.0</span>  <span class="cd">·</span>  <span class="cg">NickOS 25.06</span>  <span class="cd">·</span>  <span class="cy">Vietnam 🇻🇳</span>`, false);
+  appendLine(`  <span class="cd">Type </span><span class="cc">help</span><span class="cd"> for all commands. Right-click for more options.</span>`, false);
+  appendLine(``, false);
+
+  // Animate in
+  gsap.from('#out .line', {
+    opacity: 0, y: 8, duration: 0.4, stagger: 0.05, ease: 'power2.out'
+  });
+})();
 </script>
 </body>
 </html>
